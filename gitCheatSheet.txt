@@ -1,0 +1,50 @@
+GIT 101
+___________________________________
+Git is a version control system which allows us keep the history of our repository. 
+Which is great becuase at anytime our code breaks we can always revert it back to an older version. 
+Git also allows you to back up your code and work collaboratively.  
+
+**Please see below to see how it works!**
+
+
+Git - The Command Line
+____________________________________
+**CLONE REPOSITORY**
+git clone https://github.com/mlam6/habitatModeling.git
+
+**CREATE YOUR BRANCH**
+git checkout -b nameOfYourBranch 
+ex. git checkout -b Michelle 
+
+
+**COMIITING FILES TO GITHUB**
+git status                                           # check state of your repository
+git pull                                             # pull latest commits form github
+git add -A                                           # add files before commiting them
+git commit -m "Message about what you have done"     # commits changes to branch 
+git push origin nameOfYourBranch                     # push changes to github
+git branch                                           # checks which branch your are currently on
+git status                                           # checks status of branch
+ 
+
+ 
+Git - GUI interface
+___________________________________
+If you're not comfortatble with the command line you can opt into the option of a GUI. 
+This can be downloaded from here-- https://desktop.github.com/
+This works very similarily,
+    1. You'll first have to log into your github account
+    2. Goto file> clone repositoty > URL > 
+       enter https://github.com/mlam6/habitatModeling.git for repository URL
+       and choose a local path > clone
+    3. Click Fetch origin on the top of the window to ensure your repository is up-to-date
+       with the repository
+    4. Whenever you make any changes to your scripts they will automatically show up here
+       RED denotes deleted 
+       GREEN denotes added 
+    5. To commit, there is a blue button on the bottom left hand side.
+       Add a summary and description of the changes you have made.
+       before committing double check on the top of the window that you are on the correct
+       branch then click on the 'Commit to ...'
+
+**That should be enough to get you started! But of course if you have any question feel free to ask me :) **
