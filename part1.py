@@ -89,4 +89,3 @@ elif presence_inFile_shp.lower().endswith('.shp'):
 
 else:
     print "Incorrect file type! The input presence points file must be *.csv or *.shp feature class."
-

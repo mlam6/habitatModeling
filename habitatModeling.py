@@ -47,6 +47,12 @@ class Tool(object):
     # The source code of the tool 
     def execute(self, parameters, messages):
         
+        # Get parameters from user
+        presenceInFile = arcpy.GetParameterAsText(1)
+        speciesName = arcpy.GetParameterAsText(2)
+        outputWorkspace = arcpy.GetParameterAsText(3)
+        coordSys = arcpy.GetParameterAsText(4)
+       
         # Set up workspaces
         try:  
             arcpy.env.workspace = r'TEMP'
@@ -55,29 +61,83 @@ class Tool(object):
 
         arcpy.env.overwriteOutput = True
         
-        # input/ output
-        # get input file
-        # get output file
-         
 
-  
-        # send outputs to a different folder
-        out_dir = "TEMP" 
+        # Return file extension
+        def checkFileExt(file): 
+            desc = arcpy.Describe(file)
+            return desc 
 
-        '''
-        TODO: 
-            1. The tool could take either a points shapefile or CSV file with the lat/lon 
-                of species presence as the input
-            2. User can set the destination workspace
-            3. User can output random points file name
-            4. User can customize parameters (ex. number of points, spacing of random points, 
-                input a boundaries shapefile with which to constrain the placement of random 
-                points, etc.)
-            5. The tool will output the merged presence/absence points shapefile
-        '''
-        return
+        
+        # Get presence points from file
+        def getPPoints():
+            if checkFileExt(presenceInFile) == ".cvs":
+                # Coordinate system of input presence points is assumed to be WGS 1984 (WKID #4326)
+                wgs1984 = arcpy.SpatialReference(4326)
+
+                # Create point shapefile and add lat/lon fields
+                pointFC_latlon = speciesName + "_presence_latlon.shp"
+                arcpy.CreateFeatureclass_management(output_workspace,pointFC_latlon,"POINT","","","",wgs1984)
 
 
+                gpsTrack = open(presence_inFile_csv, "r")
+                headerLine = gpsTrack.readline()
+                valueList = headerLine.strip().split(",")
+
+                # Create lists of possible coordinate field names for lat and lon
+                latCSV_options = ["latitude", "lat", "Lat", "Latitude", "LAT", "LATITUDE", "y", "Y"]
+                lonCSV_options = ["longitude", "lon", "Lon", "Longitude", "LON", "LONGITUDE", "x", "X"]
+
+                # Check if csv contains one of the acceptable field names located in lists
+                for item in valueList:
+                    if item in latCSV_options:
+                        latValueIndex = valueList.index(item)
+                        print "Lat field found..."
+                    elif item in lonCSV_options:
+                        lonValueIndex = valueList.index(item)
+                        print "Lon field found..."
+                    else:
+                        print "Coordinate fields not found in CSV. Please edit field name(s)\
+                                to match one of the CSV field name options."
+
+                # Read each line in csv file and create point feature in new feature class
+                with arcpy.da.InsertCursor(pointFC_latlon, ['SHAPE@']) as cursor:
+                    for point in gpsTrack.readlines():
+                        segmentedPoint = point.split(",")
+                        # Get the lat/lon values of the current reading
+                        latValue = segmentedPoint[latValueIndex]
+                        lonValue = segmentedPoint[lonValueIndex]
+                        vertex = arcpy.CreateObject("Point")
+                        vertex.X = lonValue
+                        vertex.Y = latValue
+                        feature = arcpy.PointGeometry(vertex)
+                        cursor.insertRow(feature)
+                
+                createPP()
+            elif checkFileExt(presenceInFile) == ".shp":
+                createPP()
+            else: 
+                print ("Incorrect file type! The input presence points file must be\
+                        *.csv or *.shp feature class.")
+
+
+    # create presence points
+    def createPP():
+        # Add fields with lat and lon coordinates for easy reference
+        arcpy.AddGeometryAttributes_management(pointFC_latlon, "POINT_X_Y_Z_M")
+
+        # Project the presence points from WGS 1984 to the user's desired PCS 
+        pointFC_proj = pointFC_latlon[:-10] + "proj.shp"
+        arcpy.Project_management(pointFC_latlon, pointFC_proj, coordSys)
+
+        # Add the Presence, Pnum and Pnum1 fields
+        arcpy.AddField_management(pointFC_proj, "Presence", "TEXT", "", "",2)
+        arcpy.AddField_management(pointFC_proj, "Pnum", "SHORT")
+        arcpy.AddField_management(pointFC_proj, "Pnum1", "SHORT")
+
+        # Add identical values to the Presence, Pnum and Pnum1 fields
+        arcpy.CalculateField_management(pointFC_proj, "Presence", '"P"')
+        arcpy.CalculateField_management(pointFC_proj, "Pnum", 1)
+        arcpy.CalculateField_management(pointFC_proj, "Pnum1", 1)
 
 
 
