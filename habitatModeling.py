@@ -53,10 +53,14 @@ class Tool(object):
         except Exception:
             print "This path cannot be found. Please try another."
 
-        # set up workspaces
-        arcpy.env.workspace = "TEMP"
         arcpy.env.overwriteOutput = True
-    
+        
+        # input/ output
+        # get input file
+        # get output file
+         
+
+  
         # send outputs to a different folder
         out_dir = "TEMP" 
 
