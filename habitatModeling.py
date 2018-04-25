@@ -48,34 +48,38 @@ class Tool(object):
     def execute(self, parameters, messages):
         
         # Get parameters from user
-        presenceInFile = arcpy.GetParameterAsText(1)
+        presenceInFileCSV = arcpy.GetParameterAsText(0)
+        presenceInFileFL = arcpy.GetParameterAsText(1)
         speciesName = arcpy.GetParameterAsText(2)
         outputWorkspace = arcpy.GetParameterAsText(3)
         coordSys = arcpy.GetParameterAsText(4)
-       
-        # Set up workspaces
-        try:  
-            arcpy.env.workspace = r'TEMP'
-        except Exception:
-            print "This path cannot be found. Please try another."
+        pointFC_proj = ""
 
         arcpy.env.overwriteOutput = True
-        
 
         # Return file extension
         def checkFileExt(file): 
             desc = arcpy.Describe(file)
             return desc 
 
+
+        # Check if in GBD 
+        def checkGDB(): 
+            if outputWorkspace.endswith('.gdb'):
+                return ""
+            else: 
+                return ".shp"
         
-        # Get presence points from file
-        def getPPoints():
-            if checkFileExt(presenceInFile) == ".cvs":
+        # Initialize shape file or feature class
+        def initialize():
+            ext = checkGDB()        # check whether we need .shp
+
+            if presenceInFileCSV != "":
                 # Coordinate system of input presence points is assumed to be WGS 1984 (WKID #4326)
                 wgs1984 = arcpy.SpatialReference(4326)
 
                 # Create point shapefile and add lat/lon fields
-                pointFC_latlon = speciesName + "_presence_latlon.shp"
+                pointFC_latlon = speciesName + "_presence_latlon" + ext
                 arcpy.CreateFeatureclass_management(output_workspace,pointFC_latlon,"POINT","","","",wgs1984)
 
 
@@ -85,7 +89,7 @@ class Tool(object):
 
                 # Create lists of possible coordinate field names for lat and lon
                 latCSV_options = ["latitude", "lat", "Lat", "Latitude", "LAT", "LATITUDE", "y", "Y"]
-                lonCSV_options = ["longitude", "lon", "Lon", "Longitude", "LON", "LONGITUDE", "x", "X"]
+                lonCSV_options = ["longitude", "lon", "Lon", "long", "Long", "LONG", "Longitude", "LON", "LONGITUDE", "x", "X"]
 
                 # Check if csv contains one of the acceptable field names located in lists
                 for item in valueList:
@@ -113,8 +117,12 @@ class Tool(object):
                         cursor.insertRow(feature)
                 
                 createPP()
-            elif checkFileExt(presenceInFile) == ".shp":
+                return pointFC_proj                
+
+            elif presenceInFileFL != "":
                 createPP()
+                return pointFC_proj
+
             else: 
                 print ("Incorrect file type! The input presence points file must be\
                         *.csv or *.shp feature class.")
@@ -122,11 +130,11 @@ class Tool(object):
 
     # create presence points
     def createPP():
-        # Add fields with lat and lon coordinates for easy reference
+        ext = checkGDB()
         arcpy.AddGeometryAttributes_management(pointFC_latlon, "POINT_X_Y_Z_M")
 
         # Project the presence points from WGS 1984 to the user's desired PCS 
-        pointFC_proj = pointFC_latlon[:-10] + "proj.shp"
+        pointFC_proj = pointFC_latlon[:-10] + "proj" + ext
         arcpy.Project_management(pointFC_latlon, pointFC_proj, coordSys)
 
         # Add the Presence, Pnum and Pnum1 fields
@@ -140,7 +148,7 @@ class Tool(object):
         arcpy.CalculateField_management(pointFC_proj, "Pnum1", 1)
 
 
-
+    
 
 
 
