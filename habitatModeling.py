@@ -44,25 +44,25 @@ class Tool(object):
             displayName="Species Name",
             name="speciesName",
             datatype="GPString",
-            parameterType="Reqrired",
+            parameterType="Required",
             direction="Input")
 
         outputWorkspace=arcpy.Parameter(
             displayName="Output Workspace",
             name="outputWorkspace",
             datatype="DEWorkspace",
-            parameterType="Reqrired",
+            parameterType="Required",
             direction="Input")
 
         coordSys=arcpy.Parameter(
             displayName="Output Coordinate System",
             name="coordSys",
             datatype="GPSpatialReference",
-            parameterType="Reqrired",
+            parameterType="Required",
             direction="Input")
 
-        params = [presenceInFileCSV, presenceInFileFL, speciesName, outputWorkspace, coordSys]
-        return params
+        parameters = [presenceInFileCSV, presenceInFileFL, speciesName, outputWorkspace, coordSys]
+        return parameters
 
     # Set whether tool is licensed to execute
     def isLicensed(self):
@@ -83,12 +83,11 @@ class Tool(object):
     def execute(self, parameters, messages):
         
         # Get parameters from user
-        presenceInFileCSV = arcpy.GetParameterAsText(0)
-        presenceInFileFL = arcpy.GetParameterAsText(1)
-        speciesName = arcpy.GetParameterAsText(2)
-        outputWorkspace = arcpy.GetParameterAsText(3)
-        coordSys = arcpy.GetParameterAsText(4)
-        pointFC_proj = ""
+        presenceInFileCSV = parameters[0].valueAsText
+        presenceInFileFL = parameters[1].valueAsText
+        speciesName = parameters[2].valueAsText
+        outputWorkspace = parameters[3].valueAsText
+        coordSys = parameters[4].valueAsText
 
         arcpy.env.overwriteOutput = True
 
@@ -115,10 +114,10 @@ class Tool(object):
 
                 # Create point shapefile and add lat/lon fields
                 pointFC_latlon = speciesName + "_presence_latlon" + ext
-                arcpy.CreateFeatureclass_management(output_workspace,pointFC_latlon,"POINT","","","",wgs1984)
+                arcpy.CreateFeatureclass_management(outputWorkspace, pointFC_latlon, "POINT","","","",wgs1984, "", "", "", "")
+                messages.addMessage("\n" + "Yay, you're doing great!")
 
-
-                gpsTrack = open(presence_inFile_csv, "r")
+                gpsTrack = open(presenceInFileCSV, "r")
                 headerLine = gpsTrack.readline()
                 valueList = headerLine.strip().split(",")
 
@@ -151,39 +150,40 @@ class Tool(object):
                         feature = arcpy.PointGeometry(vertex)
                         cursor.insertRow(feature)
                 
-                createPP()
-                return pointFC_proj                
+                createPP(pointFC_latlon)
+                return                
 
             elif presenceInFileFL != "":
-                createPP()
-                return pointFC_proj
+                #createPP()
+                return 
 
             else: 
                 print ("Incorrect file type! The input presence points file must be\
                         *.csv or *.shp feature class.")
 
 
-    # create presence points
-    def createPP():
-        ext = checkGDB()
-        arcpy.AddGeometryAttributes_management(pointFC_latlon, "POINT_X_Y_Z_M")
+        # create presence points
+        def createPP(pointFC_latlon):
+            ext = checkGDB()
+            arcpy.AddGeometryAttributes_management(pointFC_latlon, "POINT_X_Y_Z_M")
 
-        # Project the presence points from WGS 1984 to the user's desired PCS 
-        pointFC_proj = pointFC_latlon[:-10] + "proj" + ext
-        arcpy.Project_management(pointFC_latlon, pointFC_proj, coordSys)
+            # Project the presence points from WGS 1984 to the user's desired PCS
+            pointFC_proj = pointFC_latlon + "proj" + ext
+            arcpy.Project_management(pointFC_latlon, pointFC_proj, coordSys)
 
-        # Add the Presence, Pnum and Pnum1 fields
-        arcpy.AddField_management(pointFC_proj, "Presence", "TEXT", "", "",2)
-        arcpy.AddField_management(pointFC_proj, "Pnum", "SHORT")
-        arcpy.AddField_management(pointFC_proj, "Pnum1", "SHORT")
+            # Add the Presence, Pnum and Pnum1 fields
+            arcpy.AddField_management(pointFC_proj, "Presence", "TEXT", "", "",2)
+            arcpy.AddField_management(pointFC_proj, "Pnum", "SHORT")
+            arcpy.AddField_management(pointFC_proj, "Pnum1", "SHORT")
 
-        # Add identical values to the Presence, Pnum and Pnum1 fields
-        arcpy.CalculateField_management(pointFC_proj, "Presence", '"P"')
-        arcpy.CalculateField_management(pointFC_proj, "Pnum", 1)
-        arcpy.CalculateField_management(pointFC_proj, "Pnum1", 1)
+            # Add identical values to the Presence, Pnum and Pnum1 fields
+            arcpy.CalculateField_management(pointFC_proj, "Presence", '"P"')
+            arcpy.CalculateField_management(pointFC_proj, "Pnum", 1)
+            arcpy.CalculateField_management(pointFC_proj, "Pnum1", 1)
 
 
-    
+        initialize()
+        return
 
 
 
