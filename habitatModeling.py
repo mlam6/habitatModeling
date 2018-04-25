@@ -26,7 +26,42 @@ class Tool(object):
 
     # Define parameter definitions
     def getParameterInfo(self):
-        params = None
+        presenceInFileCSV=arcpy.Parameter(
+            displayName="Input Presence Points CSV",
+            name="ppCSV",
+            datatype="DETable",
+            parameterType="Optional",
+            direction="Input")
+
+        presenceInFileFL=arcpy.Parameter(
+            displayName="Input Presence Points Feature Layer",
+            name="ppFL",
+            datatype="GPFeatureLayer",
+            parameterType="Optional",
+            direction="Input")
+
+        speciesName=arcpy.Parameter(
+            displayName="Species Name",
+            name="speciesName",
+            datatype="GPString",
+            parameterType="Reqrired",
+            direction="Input")
+
+        outputWorkspace=arcpy.Parameter(
+            displayName="Output Workspace",
+            name="outputWorkspace",
+            datatype="DEWorkspace",
+            parameterType="Reqrired",
+            direction="Input")
+
+        coordSys=arcpy.Parameter(
+            displayName="Output Coordinate System",
+            name="coordSys",
+            datatype="GPSpatialReference",
+            parameterType="Reqrired",
+            direction="Input")
+
+        params = [presenceInFileCSV, presenceInFileFL, speciesName, outputWorkspace, coordSys]
         return params
 
     # Set whether tool is licensed to execute
