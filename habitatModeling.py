@@ -60,9 +60,10 @@ class Tool(object):
             parameterType="Required",
             direction="Input")
 
-        # TODO: distValOrField, clip_features
+        # TODO: distValOrField, clip_features, numField, minAllowedDist
 
-        parameters = [presenceInFileCSV, presenceInFileFL, speciesName, outputWorkspace, coordSys]
+        parameters = [presenceInFileCSV, presenceInFileFL, speciesName, outputWorkspace, 
+            coordSys, distValOrField, clip_features, numField, minAllowedDist]
         return parameters
 
     # Set whether tool is licensed to execute
@@ -87,11 +88,13 @@ class Tool(object):
         presenceInFileCSV = parameters[0].valueAsText
         presenceInFileFL = parameters[1].valueAsText
         speciesName = parameters[2].valueAsText
-        outputWorkspace = parameters[3].valueAsText
-        coordSys = parameters[4].valueAsText
+        coordSys = parameters[3].valueAsText
         ## NEW !!!!!
-        distValOrField = parameters[5].valueAsText
-        clipFeatures = parameters[6].valueAsText
+        distValOrField = parameters[4].valueAsText
+        clipFeatures = parameters[5].valueAsText
+        outputWorkspace = parameters[6].valueAsText    # old
+        numField = parameters[7].valueAsText
+        minAllowedDist = parameters[8].valueAsText
 
         ow = str(outputWorkspace + "\\")
 
@@ -187,25 +190,60 @@ class Tool(object):
             arcpy.CalculateField_management(pointFC_proj, "Pnum1", 1)
 
             buffer(pointFC_proj)
-            clip(pointFC_proj)
 
 
 
         # Process: Buffer
         def buffer(pointFC_proj):
-            buffDist = pointFC_proj + ow + "BuffDistFromPres" + ext
+            buffDist = pointFC_proj + ow + "_Buffer_Dist_From_Presence" + ext
 
             arcpy.Buffer_analysis(pointFC_proj, buffDist, distValOrField, "FULL", 
                 "ROUND", "ALL", "", "PLANAR")
 
-    
+            clip(buffDist)
+   
+
         # Process: Clip 
-        def buffer(pointFC_proj):
-            buffDist = pointFC_proj + ow + "BuffDistFromPres" + ext
-            exBuffZone = pointFC_proj + ow + "ExbuffDistBuffZone" + ext
+        def buffer(buffDist):
+            exBuffZone = pointFC_proj + ow + "_Excluded_Buffer_Zone" + ext
 
             arcpy.Clip_analysis(buffDist, clipFeatures, exBuffZone, "")
 
+            randomPointGen(exBuffZone)
+
+
+        # Create random points
+        def randomPointGen(exBuffZone):
+            arcpy.CreateRandomPoints_management(outPath, outName, exBuffZone, "", numField,
+                minAllowedDist)
+            
+            addTextField()
+
+        # Add text feilds
+        def addTextField():
+            randomPointGen()
+  
+            # Create fields
+            presence = "Presence"
+            pum = "Pnum"
+            pnum1 = "Pnum1"
+            arcpy.AddField_management(outName, presence, "TEXT")  # add text field
+            arcpy.AddField_management(outName, pnum, "SHORT") # add short field
+            arcpy.AddField_management(outName, pnum1, "SHORT") # add short field
+ 
+            # Fill in given value for every record
+            arcpy.CalculateField_management(outName, presence, "A")
+            arcpy.CalculateField_management(outName, pum, 0)
+            arcpy.CalculateField_management(outName, pnum1, 2)
+
+
+        # Merge shp files together
+        def merge():
+            addTextField()
+ 
+            presenceData = "SHP_FILE_HERE"           # Shp file from phase 1
+            absenceDAta = "SHP_FILE_HERE"            # Shp file from option 2
+            arcpy.Merge_management([presenceData, absenceDAta], outPath)
 
 
         initialize()
