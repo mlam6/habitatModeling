@@ -1,7 +1,6 @@
 """
     Author: Carson Hauck, Marc Healy and Michelle Lam
     Date: April 15, 2018
-    Note: 
 """
 
 import arcpy
@@ -115,7 +114,6 @@ class Tool(object):
                 # Create point shapefile and add lat/lon fields
                 pointFC_latlon = speciesName + "_presence_latlon" + ext
                 arcpy.CreateFeatureclass_management(outputWorkspace, pointFC_latlon, "POINT","","","",wgs1984, "", "", "", "")
-                messages.addMessage("\n" + "Yay, you're doing great!")
 
                 gpsTrack = open(presenceInFileCSV, "r")
                 headerLine = gpsTrack.readline()
@@ -129,13 +127,13 @@ class Tool(object):
                 for item in valueList:
                     if item in latCSV_options:
                         latValueIndex = valueList.index(item)
-                        print "Lat field found..."
+                        messages.addMessage("Lat field found...")
                     elif item in lonCSV_options:
                         lonValueIndex = valueList.index(item)
-                        print "Lon field found..."
+                        messages.addMessage("Lon field found...")
                     else:
-                        print "Coordinate fields not found in CSV. Please edit field name(s)\
-                                to match one of the CSV field name options."
+                        messages.addMessage("Coordinate fields not found in CSV. Please edit field name(s)\
+                                to match one of the CSV field name options.")
 
                 # Read each line in csv file and create point feature in new feature class
                 with arcpy.da.InsertCursor(pointFC_latlon, ['SHAPE@']) as cursor:
@@ -158,12 +156,18 @@ class Tool(object):
                 return 
 
             else: 
-                print ("Incorrect file type! The input presence points file must be\
+                messages.addMessage("Incorrect file type! The input presence points file must be\
                         *.csv or *.shp feature class.")
 
 
         # create presence points
         def createPP(pointFC_latlon):
+            
+            # Check extension
+            latLongFC = pointFC_latlon
+            if pointFC_latlon.endswith(".shp")
+                latLongFC = pointFC_latlon[:-4]
+
             ext = checkGDB()
             arcpy.AddGeometryAttributes_management(pointFC_latlon, "POINT_X_Y_Z_M")
 
