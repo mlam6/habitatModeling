@@ -60,6 +60,8 @@ class Tool(object):
             parameterType="Required",
             direction="Input")
 
+        # TODO: distValOrField, clip_features
+
         parameters = [presenceInFileCSV, presenceInFileFL, speciesName, outputWorkspace, coordSys]
         return parameters
 
@@ -87,8 +89,11 @@ class Tool(object):
         speciesName = parameters[2].valueAsText
         outputWorkspace = parameters[3].valueAsText
         coordSys = parameters[4].valueAsText
+        ## NEW !!!!!
+        distValOrField = parameters[5].valueAsText
+        clipFeatures = parameters[6].valueAsText
 
-        OW = str(outputWorkspace + "\\")
+        ow = str(outputWorkspace + "\\")
 
         arcpy.env.overwriteOutput = True
 
@@ -163,14 +168,13 @@ class Tool(object):
 
         # create presence points
         def createPP(pointFC_latlon):
-            wgs1984 = arcpy.SpatialReference(4326)
-
             ext = checkGDB()
+ 
             arcpy.AddGeometryAttributes_management(pointFC_latlon, "POINT_X_Y_Z_M", "", "", "")
 
             # Project the presence points from WGS 1984 to the user's desired PCS
-            pointFC_proj = OW + speciesName + "_presence_proj" + ext
-            arcpy.Project_management(OW + pointFC_latlon, pointFC_proj, coordSys, "", "", "", "", "")
+            pointFC_proj = ow + speciesName + "_presence_proj" + ext
+            arcpy.Project_management(ow + pointFC_latlon, pointFC_proj, coordSys, "", "", "", "", "")
 
             # Add the Presence, Pnum and Pnum1 fields
             arcpy.AddField_management(pointFC_proj, "Presence", "TEXT", "", "",2)
@@ -181,6 +185,27 @@ class Tool(object):
             arcpy.CalculateField_management(pointFC_proj, "Presence", '"P"')
             arcpy.CalculateField_management(pointFC_proj, "Pnum", 1)
             arcpy.CalculateField_management(pointFC_proj, "Pnum1", 1)
+
+            buffer(pointFC_proj)
+            clip(pointFC_proj)
+
+
+
+        # Process: Buffer
+        def buffer(pointFC_proj):
+            buffDist = pointFC_proj + ow + "BuffDistFromPres" + ext
+
+            arcpy.Buffer_analysis(pointFC_proj, buffDist, distValOrField, "FULL", 
+                "ROUND", "ALL", "", "PLANAR")
+
+    
+        # Process: Clip 
+        def buffer(pointFC_proj):
+            buffDist = pointFC_proj + ow + "BuffDistFromPres" + ext
+            exBuffZone = pointFC_proj + ow + "ExbuffDistBuffZone" + ext
+
+            arcpy.Clip_analysis(buffDist, clipFeatures, exBuffZone, "")
+
 
 
         initialize()
