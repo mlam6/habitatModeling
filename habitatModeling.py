@@ -4,7 +4,7 @@
 """
 
 import arcpy
-
+import csv
 
 class Toolbox(object):
     # Define the toolbox (the name of the toolbox is the name of the .pyt file)
@@ -78,9 +78,9 @@ class Tool(object):
     def updateMessages(self, parameters):
         return
 
-    # The source code of the tool 
+    # The source code of the tool
     def execute(self, parameters, messages):
-        
+
         # Get parameters from user
         presenceInFileCSV = parameters[0].valueAsText
         presenceInFileFL = parameters[1].valueAsText
@@ -88,21 +88,22 @@ class Tool(object):
         outputWorkspace = parameters[3].valueAsText
         coordSys = parameters[4].valueAsText
 
+        OW = str(outputWorkspace + "\\")
+
         arcpy.env.overwriteOutput = True
 
         # Return file extension
-        def checkFileExt(file): 
+        def checkFileExt(file):
             desc = arcpy.Describe(file)
-            return desc 
+            return desc
 
-
-        # Check if in GBD 
-        def checkGDB(): 
+        # Check if in GBD
+        def checkGDB():
             if outputWorkspace.endswith('.gdb'):
                 return ""
-            else: 
+            else:
                 return ".shp"
-        
+
         # Initialize shape file or feature class
         def initialize():
             ext = checkGDB()        # check whether we need .shp
@@ -147,33 +148,29 @@ class Tool(object):
                         vertex.Y = latValue
                         feature = arcpy.PointGeometry(vertex)
                         cursor.insertRow(feature)
-                
+
                 createPP(pointFC_latlon)
-                return                
+                return
 
             elif presenceInFileFL != "":
                 #createPP()
-                return 
+                return
 
-            else: 
+            else:
                 messages.addMessage("Incorrect file type! The input presence points file must be\
                         *.csv or *.shp feature class.")
 
 
         # create presence points
         def createPP(pointFC_latlon):
-            
-            # Check extension
-            latLongFC = pointFC_latlon
-            if pointFC_latlon.endswith(".shp")
-                latLongFC = pointFC_latlon[:-4]
+            wgs1984 = arcpy.SpatialReference(4326)
 
             ext = checkGDB()
-            arcpy.AddGeometryAttributes_management(pointFC_latlon, "POINT_X_Y_Z_M")
+            arcpy.AddGeometryAttributes_management(pointFC_latlon, "POINT_X_Y_Z_M", "", "", "")
 
             # Project the presence points from WGS 1984 to the user's desired PCS
-            pointFC_proj = pointFC_latlon + "proj" + ext
-            arcpy.Project_management(pointFC_latlon, pointFC_proj, coordSys)
+            pointFC_proj = OW + speciesName + "_presence_proj" + ext
+            arcpy.Project_management(OW + pointFC_latlon, pointFC_proj, coordSys, "", "", "", "", "")
 
             # Add the Presence, Pnum and Pnum1 fields
             arcpy.AddField_management(pointFC_proj, "Presence", "TEXT", "", "",2)
@@ -188,6 +185,3 @@ class Tool(object):
 
         initialize()
         return
-
-
-
