@@ -59,37 +59,36 @@ class Tool(object):
             datatype="GPSpatialReference",
             parameterType="Required",
             direction="Input")
-   
-      distValOrField=arcpy.Parameter(
+
+        distVal = arcpy.Parameter(
             displayName="Buffer Distance",
             name="buffDist",
             datatype="GPLinearUnit",
             parameterType="Required",
             direction="Input")
 
-      clip_features=arcpy.Parameter(
+        clipFeatures=arcpy.Parameter(
             displayName="Constraining Polygon",
             name="constrainPoly",
             datatype="GPFeatureLayer",
             parameterType="Required",
             direction="Input")
 
-      numField=arcpy.Parameter(
+        numField=arcpy.Parameter(
             displayName="Number of Random Points",
             name="numOfRandPoints",
             datatype="GPLong",
             parameterType="Required",
             direction="Input")
 
-      minAllowedDist=arcpy.Parameter(
+        minAllowedDist=arcpy.Parameter(
             displayName="Minimum Allowed Distance between Points",
             name="minAllowedDistBtwP",
             datatype="GPLinearUnit",
             parameterType="Required",
             direction="Input")
 
-        parameters = [presenceInFileCSV, presenceInFileFL, speciesName, outputWorkspace, 
-            coordSys, distValOrField, clip_features, numField, minAllowedDist]
+        parameters = [presenceInFileCSV, presenceInFileFL, speciesName, outputWorkspace, coordSys, distVal, clipFeatures, numField, minAllowedDist]
         return parameters
 
     # Set whether tool is licensed to execute
@@ -107,28 +106,37 @@ class Tool(object):
     def updateMessages(self, parameters):
         return
 
-    # The source code of the tool
+    # The source code of the tool 
     def execute(self, parameters, messages):
-
+        
         # Get parameters from user
         presenceInFileCSV = parameters[0].valueAsText
         presenceInFileFL = parameters[1].valueAsText
         speciesName = parameters[2].valueAsText
-        coordSys = parameters[3].valueAsText
-        distValOrField = parameters[4].valueAsText
-        clipFeatures = parameters[5].valueAsText
-        outputWorkspace = parameters[6].valueAsText   
+        outputWorkspace = parameters[3].valueAsText
+        coordSys = parameters[4].valueAsText
+        distVal = parameters[5].valueAsText
+        clipFeatures = parameters[6].valueAsText
         numField = parameters[7].valueAsText
         minAllowedDist = parameters[8].valueAsText
 
-        ow = str(outputWorkspace + "\\")
+        OW = str(outputWorkspace + "\\")
 
         arcpy.env.overwriteOutput = True
 
+        # Adding Workspace Path
+        def WS():
+            if presenceInFileCSV != None and presenceInFileCSV.endswith(".csv"):
+                temp = str(outputWorkspace + "\\")
+                return temp
+            else:
+                temp = ""
+                return temp
+
         # Return file extension
-        def checkFileExt(file):
+        def checkFileExt(file): 
             desc = arcpy.Describe(file)
-            return desc
+            return desc 
 
         # Check if in GBD
         def checkGDB():
@@ -141,7 +149,8 @@ class Tool(object):
         def initialize():
             ext = checkGDB()        # check whether we need .shp
 
-            if presenceInFileCSV != "":
+            if presenceInFileCSV != None and presenceInFileCSV.endswith(".csv"):
+
                 # Coordinate system of input presence points is assumed to be WGS 1984 (WKID #4326)
                 wgs1984 = arcpy.SpatialReference(4326)
 
@@ -182,27 +191,29 @@ class Tool(object):
                         feature = arcpy.PointGeometry(vertex)
                         cursor.insertRow(feature)
 
+                messages.addMessage("Iniatialized...")
                 createPP(pointFC_latlon)
-                return
+                return                
 
             elif presenceInFileFL != "":
-                #createPP()
-                return
+                pointFC_latlon = presenceInFileFL
+                createPP(pointFC_latlon)
+                return 
 
-            else:
+            else: 
                 messages.addMessage("Incorrect file type! The input presence points file must be\
                         *.csv or *.shp feature class.")
 
 
         # create presence points
         def createPP(pointFC_latlon):
+
+            temp = WS()
             ext = checkGDB()
- 
-            arcpy.AddGeometryAttributes_management(pointFC_latlon, "POINT_X_Y_Z_M", "", "", "")
 
             # Project the presence points from WGS 1984 to the user's desired PCS
-            pointFC_proj = ow + speciesName + "_presence_proj" + ext
-            arcpy.Project_management(ow + pointFC_latlon, pointFC_proj, coordSys, "", "", "", "", "")
+            pointFC_proj = OW + speciesName + "_presence_proj" + ext
+            arcpy.Project_management(temp + pointFC_latlon, pointFC_proj, coordSys, "", "", "", "", "")
 
             # Add the Presence, Pnum and Pnum1 fields
             arcpy.AddField_management(pointFC_proj, "Presence", "TEXT", "", "",2)
@@ -214,66 +225,89 @@ class Tool(object):
             arcpy.CalculateField_management(pointFC_proj, "Pnum", 1)
             arcpy.CalculateField_management(pointFC_proj, "Pnum1", 1)
 
+            messages.addMessage("Created Presence Points")
+
             buffer(pointFC_proj)
 
 
         # Process: Buffer
         def buffer(pointFC_proj):
-            buffDist = pointFC_proj + ow + "_Buffer_Dist_From_Presence" + ext
+            messages.addMessage("Buffering...")
+            ext = checkGDB()
+            buffDist = OW + speciesName + "_Buffer_Dist_From_Presence" + ext
 
-            arcpy.Buffer_analysis(pointFC_proj, buffDist, distValOrField, "FULL", 
-                "ROUND", "ALL", "", "PLANAR")
+            arcpy.Buffer_analysis(pointFC_proj, buffDist, distVal, "FULL", "ROUND", "ALL", "", "PLANAR")
+
+            messages.addMessage("Finished Buffering")
 
             clip(buffDist)
-   
 
-        # Process: Clip 
-        def buffer(buffDist):
-            exBuffZone = pointFC_proj + ow + "_Excluded_Buffer_Zone" + ext
+
+        # Process: Clip
+        def clip(buffDist):
+            messages.addMessage("Clipping...")
+            ext = checkGDB()
+            exBuffZone = OW + speciesName + "_Excluded_Buffer_Zone" + ext
 
             arcpy.Clip_analysis(buffDist, clipFeatures, exBuffZone, "")
+
+            messages.addMessage("Finished Clip")
 
             randomPointGen(exBuffZone)
 
 
         # Create random points
         def randomPointGen(exBuffZone):
-            ext = checkGDB() 
-            outName = "RandomAbsence_Species" + ext
-            
-            arcpy.CreateRandomPoints_management(outputWorkspace, outName, exBuffZone, 
-                "", numField, minAllowedDist)
-            
+            ext = checkGDB()
+            outName = speciesName + "_RandomAbsence_Species" + ext
+
+            arcpy.CreateRandomPoints_management(OW, outName, exBuffZone, "", numField, minAllowedDist)
+
+            messages.addMessage("Finish Random Points Generator")
+
             addTextField(outName)
-            merge(outName) 
+
+            messages.addMessage("Finish Adding Text Field")
+
+            merge()
+
+            messages.addMessage("Finish Merge")
 
 
-        # Add text feilds
+        # Add text fields
         def addTextField(outName):
             ext = checkGDB()
 
             # Create fields
             presence = "Presence"
-            pum = "Pnum"
+            pnum = "Pnum"
             pnum1 = "Pnum1"
-            arcpy.AddField_management(outName, presence, "TEXT")  # add text field
-            arcpy.AddField_management(outName, pnum, "SHORT") # add short field
-            arcpy.AddField_management(outName, pnum1, "SHORT") # add short field
- 
+            arcpy.AddField_management(OW + outName, presence, "TEXT")  # add text field
+            arcpy.AddField_management(OW + outName, pnum, "SHORT") # add short field
+            arcpy.AddField_management(OW + outName, pnum1, "SHORT") # add short field
+
             # Fill in given value for every record
-            arcpy.CalculateField_management(outName, presence, "A")
-            arcpy.CalculateField_management(outName, pum, 0)
-            arcpy.CalculateField_management(outName, pnum1, 2)
+            arcpy.CalculateField_management(OW + outName, presence, '"A"')
+            arcpy.CalculateField_management(OW + outName, pnum, 0)
+            arcpy.CalculateField_management(OW + outName, pnum1, 2)
 
 
         # Merge shp files together
-        def merge(outName):
+        def merge():
             ext = checkGDB()
 
-            pointFC_proj = ow + speciesName + "_presence_proj" + ext 
+            outName = OW + speciesName + "_RandomAbsence_Species" + ext
+            pointFC_proj = OW + speciesName + "_presence_proj" + ext
+            Final_shp = OW + speciesName + "_PA" + ext
 
-            arcpy.Merge_management([outName, pointFC_proj], outputWorkspace)
+            arcpy.Merge_management([outName, pointFC_proj], Final_shp, "")
 
 
         initialize()
+
+        messages.addMessage("Completed!")
+
         return
+
+
+
