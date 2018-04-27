@@ -59,8 +59,34 @@ class Tool(object):
             datatype="GPSpatialReference",
             parameterType="Required",
             direction="Input")
+   
+      distValOrField=arcpy.Parameter(
+            displayName="Buffer Distance",
+            name="buffDist",
+            datatype="GPLinearUnit",
+            parameterType="Required",
+            direction="Input")
 
-        # TODO: distValOrField, clip_features, numField, minAllowedDist
+      clip_features=arcpy.Parameter(
+            displayName="Constraining Polygon",
+            name="constrainPoly",
+            datatype="GPFeatureLayer",
+            parameterType="Required",
+            direction="Input")
+
+      numField=arcpy.Parameter(
+            displayName="Number of Random Points",
+            name="numOfRandPoints",
+            datatype="GPLong",
+            parameterType="Required",
+            direction="Input")
+
+      minAllowedDist=arcpy.Parameter(
+            displayName="Minimum Allowed Distance between Points",
+            name="minAllowedDistBtwP",
+            datatype="GPLinearUnit",
+            parameterType="Required",
+            direction="Input")
 
         parameters = [presenceInFileCSV, presenceInFileFL, speciesName, outputWorkspace, 
             coordSys, distValOrField, clip_features, numField, minAllowedDist]
@@ -89,10 +115,9 @@ class Tool(object):
         presenceInFileFL = parameters[1].valueAsText
         speciesName = parameters[2].valueAsText
         coordSys = parameters[3].valueAsText
-        ## NEW !!!!!
         distValOrField = parameters[4].valueAsText
         clipFeatures = parameters[5].valueAsText
-        outputWorkspace = parameters[6].valueAsText    # old
+        outputWorkspace = parameters[6].valueAsText   
         numField = parameters[7].valueAsText
         minAllowedDist = parameters[8].valueAsText
 
@@ -192,7 +217,6 @@ class Tool(object):
             buffer(pointFC_proj)
 
 
-
         # Process: Buffer
         def buffer(pointFC_proj):
             buffDist = pointFC_proj + ow + "_Buffer_Dist_From_Presence" + ext
@@ -214,15 +238,20 @@ class Tool(object):
 
         # Create random points
         def randomPointGen(exBuffZone):
-            arcpy.CreateRandomPoints_management(outPath, outName, exBuffZone, "", numField,
-                minAllowedDist)
+            ext = checkGDB() 
+            outName = "RandomAbsence_Species" + ext
             
-            addTextField()
+            arcpy.CreateRandomPoints_management(outputWorkspace, outName, exBuffZone, 
+                "", numField, minAllowedDist)
+            
+            addTextField(outName)
+            merge(outName) 
+
 
         # Add text feilds
-        def addTextField():
-            randomPointGen()
-  
+        def addTextField(outName):
+            ext = checkGDB()
+
             # Create fields
             presence = "Presence"
             pum = "Pnum"
@@ -238,12 +267,12 @@ class Tool(object):
 
 
         # Merge shp files together
-        def merge():
-            addTextField()
- 
-            presenceData = "SHP_FILE_HERE"           # Shp file from phase 1
-            absenceDAta = "SHP_FILE_HERE"            # Shp file from option 2
-            arcpy.Merge_management([presenceData, absenceDAta], outPath)
+        def merge(outName):
+            ext = checkGDB()
+
+            pointFC_proj = ow + speciesName + "_presence_proj" + ext 
+
+            arcpy.Merge_management([outName, pointFC_proj], outputWorkspace)
 
 
         initialize()
