@@ -1,6 +1,6 @@
 """
-    Author: Carson Hauck, Marc Healy and Michelle Lam
-    Date: April 15, 2018
+    Author: Carson Hauck, Marc Healy, and Michelle Lam
+    Date: 30 April 2018
 """
 
 import arcpy
@@ -19,7 +19,7 @@ class Toolbox(object):
 class Tool(object):
     # Define the tool (tool name is the name of the class)
     def __init__(self):
-        self.label = "Tool"
+        self.label = "Create Species Absence Points"
         self.description = ""
         self.canRunInBackground = False
 
@@ -57,6 +57,13 @@ class Tool(object):
             displayName="Output Coordinate System",
             name="coordSys",
             datatype="GPSpatialReference",
+            parameterType="Optional",
+            direction="Input")
+
+        eraseFeatures=arcpy.Parameter(
+            displayName="Constraining Polygon",
+            name="constrainPoly",
+            datatype="GPFeatureLayer",
             parameterType="Required",
             direction="Input")
 
@@ -64,14 +71,7 @@ class Tool(object):
             displayName="Buffer Distance",
             name="buffDist",
             datatype="GPLinearUnit",
-            parameterType="Required",
-            direction="Input")
-
-        clipFeatures=arcpy.Parameter(
-            displayName="Constraining Polygon",
-            name="constrainPoly",
-            datatype="GPFeatureLayer",
-            parameterType="Required",
+            parameterType="Optional",
             direction="Input")
 
         numField=arcpy.Parameter(
@@ -82,13 +82,13 @@ class Tool(object):
             direction="Input")
 
         minAllowedDist=arcpy.Parameter(
-            displayName="Minimum Allowed Distance between Points",
+            displayName="Minimum Allowed Distance Between Points",
             name="minAllowedDistBtwP",
             datatype="GPLinearUnit",
-            parameterType="Required",
+            parameterType="Optional",
             direction="Input")
 
-        parameters = [presenceInFileCSV, presenceInFileFL, speciesName, outputWorkspace, coordSys, distVal, clipFeatures, numField, minAllowedDist]
+        parameters = [presenceInFileCSV, presenceInFileFL, speciesName, outputWorkspace, coordSys, eraseFeatures, distVal, numField, minAllowedDist]
         return parameters
 
     # Set whether tool is licensed to execute
@@ -115,8 +115,8 @@ class Tool(object):
         speciesName = parameters[2].valueAsText
         outputWorkspace = parameters[3].valueAsText
         coordSys = parameters[4].valueAsText
-        distVal = parameters[5].valueAsText
-        clipFeatures = parameters[6].valueAsText
+        eraseFeatures = parameters[5].valueAsText
+        distVal = parameters[6].valueAsText
         numField = parameters[7].valueAsText
         minAllowedDist = parameters[8].valueAsText
 
@@ -155,7 +155,7 @@ class Tool(object):
                 wgs1984 = arcpy.SpatialReference(4326)
 
                 # Create point shapefile and add lat/lon fields
-                pointFC_latlon = speciesName + "_presence_latlon" + ext
+                pointFC_latlon = speciesName + "_Presence_latlon" + ext
                 arcpy.CreateFeatureclass_management(outputWorkspace, pointFC_latlon, "POINT","","","",wgs1984, "", "", "", "")
 
                 gpsTrack = open(presenceInFileCSV, "r")
@@ -170,16 +170,16 @@ class Tool(object):
                 for item in valueList:
                     if item in latCSV_options:
                         latValueIndex = valueList.index(item)
-                        messages.addMessage("Lat field found...")
+                        messages.addMessage("Latitude field found...")
                     elif item in lonCSV_options:
                         lonValueIndex = valueList.index(item)
-                        messages.addMessage("Lon field found...")
+                        messages.addMessage("Longitude field found...")
                     else:
                         messages.addMessage("Coordinate fields not found in CSV. Please edit field name(s)\
                                 to match one of the CSV field name options.")
 
                 # Read each line in csv file and create point feature in new feature class
-                with arcpy.da.InsertCursor(pointFC_latlon, ['SHAPE@']) as cursor:
+                with arcpy.da.InsertCursor(OW + pointFC_latlon, ['SHAPE@']) as cursor:
                     for point in gpsTrack.readlines():
                         segmentedPoint = point.split(",")
                         # Get the lat/lon values of the current reading
@@ -191,7 +191,7 @@ class Tool(object):
                         feature = arcpy.PointGeometry(vertex)
                         cursor.insertRow(feature)
 
-                messages.addMessage("Iniatialized...")
+                messages.addMessage("Created Point Feature...")
                 createPP(pointFC_latlon)
                 return                
 
@@ -210,10 +210,18 @@ class Tool(object):
 
             temp = WS()
             ext = checkGDB()
+            pointFC_proj = ""
 
-            # Project the presence points from WGS 1984 to the user's desired PCS
-            pointFC_proj = OW + speciesName + "_presence_proj" + ext
-            arcpy.Project_management(temp + pointFC_latlon, pointFC_proj, coordSys, "", "", "", "", "")
+            if coordSys != None:
+                # Project the presence points from WGS 1984 to the user's desired PCS
+                pointFC_proj = OW + speciesName + "_Presence_proj" + ext
+                arcpy.Project_management(temp + pointFC_latlon, pointFC_proj, coordSys, "", "", "", "", "")
+
+            elif coordSys == None and presenceInFileFL != None:
+                pointFC_proj = presenceInFileFL
+
+            else:
+                pointFC_proj = OW + speciesName + "_Presence_latlon" + ext
 
             # Add the Presence, Pnum and Pnum1 fields
             arcpy.AddField_management(pointFC_proj, "Presence", "TEXT", "", "",2)
@@ -225,53 +233,67 @@ class Tool(object):
             arcpy.CalculateField_management(pointFC_proj, "Pnum", 1)
             arcpy.CalculateField_management(pointFC_proj, "Pnum1", 1)
 
-            messages.addMessage("Created Presence Points")
+            messages.addMessage("Finished Adding Attribute Fields...")
 
             buffer(pointFC_proj)
 
 
         # Process: Buffer
         def buffer(pointFC_proj):
-            messages.addMessage("Buffering...")
+
             ext = checkGDB()
-            buffDist = OW + speciesName + "_Buffer_Dist_From_Presence" + ext
+            buffDist = ""
 
-            arcpy.Buffer_analysis(pointFC_proj, buffDist, distVal, "FULL", "ROUND", "ALL", "", "PLANAR")
+            if distVal != None:
+                messages.addMessage("Buffering...")
+                buffDist = OW + speciesName + "_Buffer_Zones" + ext
+                arcpy.Buffer_analysis(pointFC_proj, buffDist, distVal, "FULL", "ROUND", "ALL", "", "PLANAR")
 
-            messages.addMessage("Finished Buffering")
+                messages.addMessage("Finished Buffering...")
 
-            clip(buffDist)
+                erase(buffDist)
+
+            else:
+                randomPointGen(eraseFeatures)
 
 
-        # Process: Clip
-        def clip(buffDist):
-            messages.addMessage("Clipping...")
+
+        # Process: Erase
+        def erase(buffDist):
+            messages.addMessage("Erasing Buffer Zones from Constraining Polygon...")
             ext = checkGDB()
-            exBuffZone = OW + speciesName + "_Excluded_Buffer_Zone" + ext
+            exBuffZone = OW + speciesName + "_Buffered_Point_Constraint" + ext
 
-            arcpy.Clip_analysis(buffDist, clipFeatures, exBuffZone, "")
+            arcpy.Erase_analysis(eraseFeatures, buffDist, exBuffZone, "")
 
-            messages.addMessage("Finished Clip")
+            messages.addMessage("Finished Erase...")
 
             randomPointGen(exBuffZone)
 
 
         # Create random points
-        def randomPointGen(exBuffZone):
+        def randomPointGen(constrainPoly):
             ext = checkGDB()
-            outName = speciesName + "_RandomAbsence_Species" + ext
 
-            arcpy.CreateRandomPoints_management(OW, outName, exBuffZone, "", numField, minAllowedDist)
+            minDist = ""
+            if minAllowedDist != None:
+                minDist = minAllowedDist
 
-            messages.addMessage("Finish Random Points Generator")
+            else:
+                minDist = ""
+
+            outName = speciesName + "_RandomAbsence" + ext
+            arcpy.CreateRandomPoints_management(OW, outName, constrainPoly, "", numField, minDist)
+
+            messages.addMessage("Finished Generating Random Points...")
 
             addTextField(outName)
 
-            messages.addMessage("Finish Adding Text Field")
+            messages.addMessage("Finished Adding Attribute Fields...")
 
             merge()
 
-            messages.addMessage("Finish Merge")
+            messages.addMessage("Finished Merge.")
 
 
         # Add text fields
@@ -292,15 +314,41 @@ class Tool(object):
             arcpy.CalculateField_management(OW + outName, pnum1, 2)
 
 
-        # Merge shp files together
+        # Merge presence and absence point files together
         def merge():
             ext = checkGDB()
 
-            outName = OW + speciesName + "_RandomAbsence_Species" + ext
-            pointFC_proj = OW + speciesName + "_presence_proj" + ext
+            outName = OW + speciesName + "_RandomAbsence" + ext
+            pointFC_proj = ""
             Final_shp = OW + speciesName + "_PA" + ext
 
+            if coordSys != None:
+                pointFC_proj = OW + speciesName + "_Presence_proj" + ext
+
+            elif coordSys == None and presenceInFileFL != None:
+                pointFC_proj = presenceInFileFL
+
+            else:
+                pointFC_proj = OW + speciesName + "_Presence_latlon" + ext
+
             arcpy.Merge_management([outName, pointFC_proj], Final_shp, "")
+
+            # Delete undesired fields which were automatically created by Arc
+            dropFields = ["CID", "Id"]
+            arcpy.DeleteField_management (Final_shp, dropFields)
+
+            spatial_ref = arcpy.Describe(Final_shp).spatialReference
+            finalShp_temp = OW + speciesName + "_PA_temp" + ext
+
+            if spatial_ref != coordSys and coordSys != None:
+                arcpy.Project_management(Final_shp, finalShp_temp, coordSys, "", "", "", "", "")
+
+                arcpy.Delete_management(Final_shp)
+
+                arcpy.Rename_management(finalShp_temp, Final_shp)
+
+            else:
+                pass
 
 
         initialize()
