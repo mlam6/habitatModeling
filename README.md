@@ -1,36 +1,37 @@
-# habitatModeling
+# Creating psuedo-absence points for habitat modeling
 
-One Paragraph of project description goes here
+This tool can be used to create species pseudo-absence points and to merge them with species presence points into a single point feature. The merged Presence-Absence (PA) point feature is often a required input in presence-absence species distribution models (ex. Logistic regression, artifical neural networks).
 
 ## Getting Started
 
-These instructions will get you a copy of the project up and running on your local machine for development and testing purposes. See deployment for notes on how to deploy the project on a live system.
+The user may either input (1) a .CSV file with species presence points in decimal degree coordinates (WGS 1984) or (2) a point features Shapefile (.SHP) or File Geodatabase Feature Class.
 
-### Prerequisites
+Users are required to specify: (1) a species name (2) an output workspace (3) the number of randomly-placed absence points, and (4) the polygon feature in which to constrain random point placement. 
 
-What things you need to install the software and how to install them
+Optional parameters include: (1) a buffer distance from presence points to exclude absence points, (2) the minimum distance that absence points must be placed from other random points, and (3) a projected coordinate system. 
 
-```
-Give examples
-```
+### Software Requirements
 
-### Installing
+ESRI ArcMap or ESRI ArcGIS Pro (If using ArcGIS Pro, the code will need to be updated to support Python 3)
 
-A step by step series of examples that tell you have to get a development env running
+### Installing & Running
 
-Say what the step will be
+Download the zip folder and connect extracted folder to ArcCatalog where the python toolbox will become visible. 
 
-```
-Give the example
-```
+This code for creating pseudo-absence points incorporates:
+  - Encapsulation of each major step into methods
+  - Conditional if statements allow for optional parameter fields
+  - Messages included to give the user feedback in ArcMap GUI as the tool runs
+  - General tool and input field descriptions to help the user
 
-And repeat
 
-```
-until finished
-```
+### Outputs
 
-End with an example of getting some data out of the system or using it for a little demo
+1. Projected, presence-only points
+
+2. Projected & merged, presence-absence points
+	 - attribute field to denote “P” vs. “A”
+	 - two integer fields used in modeling (P = 1; A = 0 or 2)
 
 ## Running the tests
 
@@ -70,7 +71,7 @@ We use ...
 
 ## Authors
 
-* **NAMES** 
+Michelle Lam, Marc Healy, & Carson Hauck
 
 ## License
 
