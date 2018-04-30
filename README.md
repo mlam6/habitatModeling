@@ -4,7 +4,7 @@ This tool can be used to create species pseudo-absence points and to merge them 
 
 ## Getting Started
 
-The user may either input (1) a .CSV file with species presence points in decimal degree coordinates (WGS 1984) or (2) a point features Shapefile (.SHP) or File Geodatabase Feature Class.
+From a GUI, the user may either input (1) a .CSV file with species presence points in decimal degree coordinates (WGS 1984) or (2) a point features Shapefile (.SHP) or File Geodatabase Feature Class.
 
 Users are required to specify: (1) a species name (2) an output workspace (3) the number of randomly-placed absence points, and (4) the polygon feature in which to constrain random point placement. 
 
@@ -32,42 +32,25 @@ This code for creating pseudo-absence points incorporates:
 2. Projected & merged, presence-absence points
 	 - attribute field to denote “P” vs. “A”
 	 - two integer fields used in modeling (P = 1; A = 0 or 2)
-
-## Running the tests
-
-Explain how to run the automated tests for this system
-
-### Break down into end to end tests
-
-Explain what these tests test and why
-
-```
-Give an example
-```
-
-### And coding style tests
-
-Explain what these tests test and why
-
-```
-Give an example
-```
-
-## Deployment
-
-Add additional notes about how to deploy this on a live system
-
+	 
 ## Built With
 
+Python and Arcpy in a Python Toolbox
 * 
 
-## Contributing
+## For more information 
 
 Please read ....
 
-## Versioning
+Barbet‐Massin, M., Jiguet, F., Albert, C.H. and Thuiller, W., 2012. Selecting pseudo‐absences for species distribution models: how, 
+	where and how many?. Methods in ecology and evolution, 3(2), pp.327-338.
 
-We use ...
+Senay, S.D., Worner, S.P. and Ikeda, T., 2013. Novel three-step pseudo-absence selection technique for improved species distribution 
+	modelling. PLoS One, 8(8), p.e71218.
+
+West, A.M., Evangelista, P.H., Jarnevich, C.S., Young, N.E., Stohlgren, T.J., Talbert, C., Talbert, M., Morisette, J. and Anderson, R., 
+	2016. Integrating remote sensing with species distribution models; mapping tamarisk invasions using the software for 
+	assisted habitat modeling (SAHM). Journal of visualized experiments: JoVE, (116).
 
 ## Authors
 
