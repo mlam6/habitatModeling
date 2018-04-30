@@ -30,8 +30,8 @@ This code for creating pseudo-absence points incorporates:
 1. Projected, presence-only points
 
 2. Projected & merged, presence-absence points
-	 - attribute field to denote “P” vs. “A”
-	 - two integer fields used in modeling (P = 1; A = 0 or 2)
+	 - attribute field to denote “P” (Presence) vs. “A” (Absence)
+	 - two integer fields used in habitat modeling (P = 1; A = 0 or 2)
 	 
 ## Built With
 
