@@ -153,8 +153,7 @@ class Tool(object):
             ext = checkGDB()        # check whether we need .shp
 
             if presenceInFileCSV != None and (presenceInFileCSV.endswith(".txt") or presenceInFileCSV.endswith("$")):
-                messages.addMessage("Incorrect file type! The input presence points file must be\
-                            *.csv or *.shp feature class.")
+                messages.addMessage("Incorrect file type! The input presence points file must be a *.csv, *.shp, or feature class.")
             elif presenceInFileCSV != None and presenceInFileCSV.endswith(".csv"):
                 # Coordinate system of input presence points is assumed to be WGS 1984 (WKID #4326)
                 wgs1984 = arcpy.SpatialReference(4326)
@@ -180,8 +179,7 @@ class Tool(object):
                         lonValueIndex = valueList.index(item)
                         messages.addMessage("Longitude field found...")
                     else:
-                        messages.addMessage("Coordinate fields not found in CSV. Please edit field name(s)\
-                                to match one of the CSV field name options.")
+                        messages.addMessage("Coordinate fields not found in CSV. Please edit field name(s)to match one of the CSV field name options.")
 
                 # Read each line in csv file and create point feature in new feature class
                 with arcpy.da.InsertCursor(OW + pointFC_latlon, ['SHAPE@']) as cursor:
