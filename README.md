@@ -53,7 +53,7 @@ West, A.M., Evangelista, P.H., Jarnevich, C.S., Young, N.E., Stohlgren, T.J., Ta
 
 ## Authors
 
-Michelle Lam, Marc Healy, & Carson Hauck
+Michelle Lam, Marc Healy & Carson Hauck
 
 ## License
 
