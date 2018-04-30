@@ -4,7 +4,7 @@ This tool can be used to create species pseudo-absence points and to merge them 
 
 ## Getting Started
 
-From a GUI, the user may either input (1) a .CSV file with species presence points in decimal degree coordinates (WGS 1984) or (2) a point features Shapefile (.SHP) or File Geodatabase Feature Class.
+From a GUI, the user may either input (1) a .CSV file with species presence points in decimal degree coordinates (WGS 1984) or (2) a point features Shapefile (.shp) or File Geodatabase Feature Class.
 
 Users are required to specify: (1) a species name (2) an output workspace (3) the number of randomly-placed absence points, and (4) the polygon feature in which to constrain random point placement. 
 
@@ -36,9 +36,8 @@ This code for creating pseudo-absence points incorporates:
 ## Built With
 
 Python and Arcpy in a Python Toolbox
-* 
 
-## For more information 
+## For More Information 
 
 Please read ....
 
@@ -62,4 +61,4 @@ This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md
 
 ## Acknowledgments
 
-* 
+Clark University, Arthur Elmes, and a habitat modeling course that provided inspiration!
