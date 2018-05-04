@@ -53,7 +53,7 @@ West, A.M., Evangelista, P.H., Jarnevich, C.S., Young, N.E., Stohlgren, T.J., Ta
 
 ## Authors
 
-Michelle Lam, Marc Healy & Carson Hauck
+Michelle Lam, Marc Healy, & Carson Hauck
 
 ## License
 
@@ -61,4 +61,6 @@ This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md
 
 ## Acknowledgments
 
-Clark University, Arthur Elmes, and a habitat modeling course that provided inspiration!
+Sample presence points for the Andean Bear (Tremarctos ornatus) downloaded from the Global Biodiversity Information Facility (GBIF):
+
+GBIF.org (16th March 2018) GBIF Occurrence Download https://doi.org/10.15468/dl.trcl4o
